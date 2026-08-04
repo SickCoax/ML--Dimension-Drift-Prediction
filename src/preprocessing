@@ -1,0 +1,15 @@
+import os
+import pandas as pd
+
+csv_path = os.path.join(
+    os.path.dirname(__file__) ,
+    ".." ,
+    "dataset" ,
+    "train.csv"
+)
+
+df = pd.read_csv(csv_path)
+
+df = df.drop(["PassengerId" , "Name"] , axis = 1)
+
+print(df["Age"].isna())
