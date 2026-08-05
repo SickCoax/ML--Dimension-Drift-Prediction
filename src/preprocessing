@@ -12,4 +12,9 @@ df = pd.read_csv(csv_path)
 
 df = df.drop(["PassengerId" , "Name"] , axis = 1)
 
-print(df["Age"].isna())
+print(df["Age"].notnull())
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder
+from sklearn
