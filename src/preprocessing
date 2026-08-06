@@ -1,20 +1,68 @@
-import os
-import pandas as pd
+def handle_nan(df) :
 
-csv_path = os.path.join(
-    os.path.dirname(__file__) ,
-    ".." ,
-    "dataset" ,
-    "train.csv"
-)
+    expense_column = ["RoomService"	,
+                    "FoodCourt" ,
+                    "ShoppingMall" ,
+                    "Spa" ,
+                    "VRDeck"
+    ]
 
-df = pd.read_csv(csv_path)
+    for i in expense_column :
+        df.loc[(df["CryoSleep"] == True) & (df[i].isnull()) , i] = 0.0
+    
+    df.loc[(((df["HomePlanet"] == "Europa") | (df["HomePlanet"] == "Mars")) & (df["VIP"].isnull())) , "VIP"] = True
+    df.loc[((df["HomePlanet"] == "Earth") & (df["VIP"].isnull())) , "VIP"] = False
 
-df = df.drop(["PassengerId" , "Name"] , axis = 1)
+    df.loc[((df["VIP"] == False) & (df["HomePlanet"].isnull())) , "HomePlanet"] = "Earth"
 
-print(df["Age"].notnull())
+    df.loc[((df["Expense"] == 0.0) & (df["CryoSleep"].isnull())) , "CryoSleep"] = True
+    df.loc[((df["Expense"] != 0.0) & (df["CryoSleep"].isnull())) , "CryoSleep"] = False
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OneHotEncoder
-from sklearn
+    for i in expense_column :
+        df.loc[((df["VIP"] == True) & (df[i].isnull())) , i] = float((df[df["VIP"] == True])[i].median())
+
+    for i in expense_column :
+        df.loc[((df["VIP"] == False) & (df[i].isnull())) , i] = float((df[df["VIP"] == False])[i].median())
+
+    unique_group = df["Group"].unique().tolist()
+
+    for i in unique_group:
+        cabin = df.loc[
+            (df["Group"] == i) & (df["Cabin"].notnull()),
+            "Cabin"
+        ]
+
+        if not cabin.empty:
+            df.loc[
+                (df["Group"] == i) & (df["Cabin"].isnull()),
+                "Cabin"
+            ] = cabin.iloc[0]
+
+    df = df.dropna(subset = ["Cabin"])
+    df = df.dropna(subset = ["HomePlanet"])
+
+    df["Age"] = df["Age"].fillna(df["Age"].median())
+
+    return df
+
+
+
+
+def get_X_y(df) :
+
+    df[["Group" , "pass_no"]] = df["PassengerId"].str.split("_" , expand = True)
+
+    df["Expense"] = df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
+
+    df = handle_nan(df)
+
+    df[["Deck", "CabinNum", "Side"]] = df["Cabin"].str.split("/", expand=True)
+
+    df = df.drop(["Name" , "PassengerId" , "Cabin" , "pass_no" , "Destination" , "Expense"] , axis = 1)
+
+    X = df.drop(["Transported"] , axis = 1)
+    y = df["Transported"]
+
+    y = y.astype(int)
+
+    return X , y
