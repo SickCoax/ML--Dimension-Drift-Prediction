@@ -1,4 +1,8 @@
-def handle_nan_train(df) :
+def get_X_y(df) :
+
+    df[["Group" , "pass_no"]] = df["PassengerId"].str.split("_" , expand = True)
+
+    df["Expense"] = df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
 
     expense_column = ["RoomService"	,
                     "FoodCourt" ,
@@ -39,16 +43,61 @@ def handle_nan_train(df) :
             ] = cabin.iloc[0]
 
     df = df.dropna(subset = ["Cabin"])
-    df = df.dropna(subset = ["HomePlanet"])
 
     df["Age"] = df["Age"].fillna(df["Age"].median())
 
     df["Destination"] = df["Destination"].fillna(df["Destination"].mode()[0])
 
-    return df
+    df[["Deck", "CabinNum", "Side"]] = df["Cabin"].str.split("/", expand=True)
+
+    df = df.drop(["Name"  , "Cabin"  , "Expense"] , axis = 1)
+
+    df["CabinNum"] = df["CabinNum"].values.astype(int)
+    df["Group"] = df["Group"].values.astype(int)
+
+    X = df.drop(["Transported"] , axis = 1)
+    y = df["Transported"]
+
+    y = y.astype(int)
+
+    null_planet_id = X["PassengerId"][X["HomePlanet"].isnull()].values
+    
+    for i in null_planet_id :
+    
+        if ((((X["VIP"][X["PassengerId"] == i]).values[0]) == True) | (((X["VIP"][X["PassengerId"] == i]).values[0]) == False)) :
+            X.loc[(X["PassengerId"] == i) , "HomePlanet"] = X.loc[
+                                                            (X["Deck"] == ((X["Deck"][X["PassengerId"] == i]).values[0])) & 
+                                                            (X["Side"] == ((X["Side"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["pass_no"] == ((X["pass_no"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["CryoSleep"] == ((X["CryoSleep"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["VIP"] == ((X["VIP"][X["PassengerId"] == i]).values[0]))
+                                                            , "HomePlanet"].mode().values[0]
+        else :
+            
+            X.loc[(X["PassengerId"] == i) , "HomePlanet"] = X.loc[
+                                                            (X["Deck"] == ((X["Deck"][X["PassengerId"] == i]).values[0])) & 
+                                                            (X["Side"] == ((X["Side"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["pass_no"] == ((X["pass_no"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["CryoSleep"] == ((X["CryoSleep"][X["PassengerId"] == i]).values[0]))
+                                                            , "HomePlanet"].mode().values[0]
+
+    X.loc[(((X["HomePlanet"] == "Europa") | (X["HomePlanet"] == "Mars")) & (X["VIP"].isnull())) , "VIP"] = True
+    X.loc[((X["HomePlanet"] == "Earth") & (X["VIP"].isnull())) , "VIP"] = False
+
+    X = X.drop(["PassengerId"] , axis = 1)
+
+    X["pass_no"] = X["pass_no"].values.astype(int)
+    
+    return X , y
 
 
-def handle_nan_test(df) :
+
+
+def get_X(df) :
+
+    df[["Group" , "pass_no"]] = df["PassengerId"].str.split("_" , expand = True)
+
+    df["Expense"] = df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
 
     expense_column = ["RoomService"	,
                     "FoodCourt" ,
@@ -88,55 +137,47 @@ def handle_nan_test(df) :
                 "Cabin"
             ] = cabin.iloc[0]
 
-    df["Cabin"] = df["Cabin"].fillna(df["Cabin"].mode()[0])
-    df["HomePlanet"] = df["HomePlanet"].fillna(df["HomePlanet"].mode()[0])
-    df["VIP"] = df["VIP"].fillna("False")
+    df = df.dropna(subset = ["Cabin"])
 
     df["Age"] = df["Age"].fillna(df["Age"].median())
 
     df["Destination"] = df["Destination"].fillna(df["Destination"].mode()[0])
 
-    return df
-
-
-
-
-def get_X_y(df) :
-
-    df[["Group" , "pass_no"]] = df["PassengerId"].str.split("_" , expand = True)
-
-    df["Expense"] = df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
-
-    df = handle_nan_train(df)
-
     df[["Deck", "CabinNum", "Side"]] = df["Cabin"].str.split("/", expand=True)
 
-    df = df.drop(["Name" , "PassengerId" , "Cabin" , "pass_no" , "Expense"] , axis = 1)
+    df = df.drop(["Name"  , "Cabin"  , "Expense"] , axis = 1)
 
     df["CabinNum"] = df["CabinNum"].values.astype(int)
     df["Group"] = df["Group"].values.astype(int)
 
     X = df.drop(["Transported"] , axis = 1)
-    y = df["Transported"]
 
-    y = y.astype(int)
+    null_planet_id = X["PassengerId"][X["HomePlanet"].isnull()].values
+    
+    for i in null_planet_id :
+    
+        if ((((X["VIP"][X["PassengerId"] == i]).values[0]) == True) | (((X["VIP"][X["PassengerId"] == i]).values[0]) == False)) :
+            X.loc[(X["PassengerId"] == i) , "HomePlanet"] = X.loc[
+                                                            (X["Deck"] == ((X["Deck"][X["PassengerId"] == i]).values[0])) & 
+                                                            (X["Side"] == ((X["Side"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["pass_no"] == ((X["pass_no"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["CryoSleep"] == ((X["CryoSleep"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["VIP"] == ((X["VIP"][X["PassengerId"] == i]).values[0]))
+                                                            , "HomePlanet"].mode().values[0]
+        else :
+            
+            X.loc[(X["PassengerId"] == i) , "HomePlanet"] = X.loc[
+                                                            (X["Deck"] == ((X["Deck"][X["PassengerId"] == i]).values[0])) & 
+                                                            (X["Side"] == ((X["Side"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["pass_no"] == ((X["pass_no"][X["PassengerId"] == i]).values[0])) &
+                                                            (X["CryoSleep"] == ((X["CryoSleep"][X["PassengerId"] == i]).values[0]))
+                                                            , "HomePlanet"].mode().values[0]
 
-    return X , y
+    X.loc[(((X["HomePlanet"] == "Europa") | (X["HomePlanet"] == "Mars")) & (X["VIP"].isnull())) , "VIP"] = True
+    X.loc[((X["HomePlanet"] == "Earth") & (X["VIP"].isnull())) , "VIP"] = False
 
+    X = X.drop(["PassengerId"] , axis = 1)
 
-def get_X(df) :
-
-    df[["Group" , "pass_no"]] = df["PassengerId"].str.split("_" , expand = True)
-
-    df["Expense"] = df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
-
-    df = handle_nan_test(df)
-
-    df[["Deck", "CabinNum", "Side"]] = df["Cabin"].str.split("/", expand=True)
-
-    df = df.drop(["Name" , "PassengerId" , "Cabin" , "pass_no" , "Expense"] , axis = 1)
-
-    df["CabinNum"] = df["CabinNum"].values.astype(int)
-    df["Group"] = df["Group"].values.astype(int)
-
-    return df
+    X["pass_no"] = X["pass_no"].values.astype(int)
+    
+    return X
