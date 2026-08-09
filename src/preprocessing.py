@@ -137,7 +137,7 @@ def get_X(df) :
                 "Cabin"
             ] = cabin.iloc[0]
 
-    df = df.dropna(subset = ["Cabin"])
+    df["Cabin"] = df["Cabin"].fillna(df["Cabin"].mode()[0])
 
     df["Age"] = df["Age"].fillna(df["Age"].median())
 
@@ -149,8 +149,8 @@ def get_X(df) :
 
     df["CabinNum"] = df["CabinNum"].values.astype(int)
     df["Group"] = df["Group"].values.astype(int)
-
-    X = df.drop(["Transported"] , axis = 1)
+    
+    X = df
 
     null_planet_id = X["PassengerId"][X["HomePlanet"].isnull()].values
     
